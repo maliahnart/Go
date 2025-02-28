@@ -34,7 +34,7 @@ public class MenuPanel extends JPanel {
 
         // Khởi tạo và phát nhạc nền
         menuMusic = new Sound("Resources/BackgroundMusic.wav");
-        menuMusic.playSound();
+//        menuMusic.playSound();
     }
 
     private void loadResources() {

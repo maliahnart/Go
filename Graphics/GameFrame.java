@@ -74,8 +74,13 @@ public class GameFrame extends JFrame {
         _mp.requestFocusInWindow();
     }
 
+//    public void playGame() {
+//        _cardLayout.show(_cardPanel, "gp");
+//        _gp.requestFocusInWindow();
+//    }
     public void playGame() {
         _cardLayout.show(_cardPanel, "gp");
+        _gp.startGame(); // Bắt đầu game loop
         _gp.requestFocusInWindow();
     }
 
