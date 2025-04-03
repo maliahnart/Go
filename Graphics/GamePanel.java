@@ -116,11 +116,8 @@ public class GamePanel extends JPanel {
     private Board board;
     private Pieces pieces;
     private GameInfoDisplay gameInfoDisplay;
+    private GameLogic gameLogic;
     private final Image backgroundImage;
-    private int blackScore = 0;
-    private int whiteScore = 0;
-    private int timeLeft;
-    private boolean isBlackTurn = true;
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(Settings.Config.GAME_WIDTH, Settings.Config.GAME_HEIGHT));
@@ -133,26 +130,24 @@ public class GamePanel extends JPanel {
         board = new Board();
         pieces = new Pieces(board);
         gameInfoDisplay = new GameInfoDisplay();
-        timeLeft = Default.Config.TIME_PER_TURN;
+        gameLogic = new GameLogic(pieces, Default.Config.TIME_PER_TURN, 6.5); // Thêm komi
+
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int x = (e.getX() - board.getOffsetX() + board.getCellSize() / 2) / board.getCellSize();
                 int y = (e.getY() - board.getOffsetY() + board.getCellSize() / 2) / board.getCellSize();
-                if (pieces.isEmpty(x, y)) {
-                    pieces.addPiece(x, y, isBlackTurn ? Color.BLACK : Color.WHITE);
-                    if (isBlackTurn) blackScore++; else whiteScore++;
-                    isBlackTurn = !isBlackTurn;
+                if (gameLogic.placePiece(x, y)) {
                     repaint();
                 }
             }
         });
 
         new Thread(() -> {
-            while (timeLeft > 0) {
+            while (!gameLogic.isGameEnded()) {
                 try {
                     Thread.sleep(1000);
-                    timeLeft--;
+                    gameLogic.updateTime();
                     repaint();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -175,6 +170,14 @@ public class GamePanel extends JPanel {
 
         if (board != null) board.draw(g2d);
         if (pieces != null) pieces.draw(g2d);
-        if (gameInfoDisplay != null) gameInfoDisplay.draw(g2d, blackScore, whiteScore, timeLeft);
+        if (gameInfoDisplay != null) {
+            gameInfoDisplay.draw(g2d,
+                    gameLogic.getBlackScore(),
+                    gameLogic.getWhiteScore(),
+                    gameLogic.getBlackTime(),
+                    gameLogic.getWhiteTime(),
+                    gameLogic.isBlackTurn()
+            );
+        }
     }
 }

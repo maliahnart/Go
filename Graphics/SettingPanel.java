@@ -127,7 +127,7 @@ public class SettingPanel extends JPanel {
         gbc.gridy = 2;
         panel.add(lblBoardSize, gbc);
 
-        JComboBox<String> cbBoardSize = new JComboBox<>(new String[]{"9x9", "13x13", "19x19"});
+        JComboBox<String> cbBoardSize = new JComboBox<>(new String[]{"4x4","9x9", "13x13", "19x19"});
         cbBoardSize.setFont(labelFont);
         gbc.gridx = 1;
         panel.add(cbBoardSize, gbc);
