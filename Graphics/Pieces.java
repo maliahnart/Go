@@ -107,4 +107,18 @@ public class Pieces {
     public int getBoardSize() {
         return board.getSize();
     }
+
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public Pieces clone(Board boardClone) {
+        Pieces cloned = new Pieces(boardClone);
+        for (Piece piece : this.pieceList) {
+            cloned.pieceList.add(new Piece(piece.getX(), piece.getY(), piece.getColor()));
+        }
+        return cloned;
+    }
+
 }

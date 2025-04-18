@@ -105,6 +105,8 @@
 package Graphics;
 
 import Model.Default;
+import Model.GameLogic;
+import Model.MinimaxAI;
 import Model.Settings;
 
 import javax.swing.*;
@@ -119,6 +121,8 @@ public class GamePanel extends JPanel {
     private GameLogic gameLogic;
     private final Image backgroundImage;
 
+    private MinimaxAI ai;
+
     public GamePanel() {
         this.setPreferredSize(new Dimension(Settings.Config.GAME_WIDTH, Settings.Config.GAME_HEIGHT));
         this.setDoubleBuffered(true);
@@ -132,13 +136,42 @@ public class GamePanel extends JPanel {
         gameInfoDisplay = new GameInfoDisplay();
         gameLogic = new GameLogic(pieces, Default.Config.TIME_PER_TURN, 6.5); // Thêm komi
 
+
+        // Kiểm tra nếu người chơi với AI
+        boolean vsAI = !Default.Config.AI_DIFFICULTY.equals("Tắt"); // ví dụ: nếu "Tắt" là chơi người với người
+        if (vsAI) {
+            boolean aiIsBlack = Default.Config.PLAYER_SIDE.equals("Trắng");
+            ai = new MinimaxAI(board.getSize(), 2, aiIsBlack);
+
+            // Nếu AI chơi trước (đen), thì cho AI đánh luôn
+            if (aiIsBlack && gameLogic.isBlackTurn()) {
+                ai.makeBestMove(gameLogic);
+                repaint();
+            }
+        }
+
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int x = (e.getX() - board.getOffsetX() + board.getCellSize() / 2) / board.getCellSize();
                 int y = (e.getY() - board.getOffsetY() + board.getCellSize() / 2) / board.getCellSize();
-                if (gameLogic.placePiece(x, y)) {
-                    repaint();
+
+                boolean vsAI = !Default.Config.AI_DIFFICULTY.equals("Tắt");
+                boolean aiIsBlack = Default.Config.PLAYER_SIDE.equals("Trắng");
+                if (vsAI) {
+                    boolean playerTurn = gameLogic.isBlackTurn() == Default.Config.PLAYER_SIDE.equals("Đen");
+                    if (playerTurn && gameLogic.placePiece(x, y)) {
+                        repaint();
+
+                        if (!gameLogic.isGameEnded()) {
+                            ai.makeBestMove(gameLogic);
+                            repaint();
+                        }
+                    }
+                } else {
+                    if (gameLogic.placePiece(x, y)) {
+                        repaint();
+                    }
                 }
             }
         });

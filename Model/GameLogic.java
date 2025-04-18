@@ -1,4 +1,6 @@
-package Graphics;
+package Model;
+
+import Graphics.Pieces;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -271,4 +273,24 @@ public class GameLogic {
     public int getBlackTime() { return blackTime; }
     public int getWhiteTime() { return whiteTime; }
     public boolean isGameEnded() { return consecutivePasses >= 2 || blackTime <= 0 || whiteTime <= 0; }
+
+
+    @Override
+    public GameLogic clone() {
+        GameLogic cloned = new GameLogic(pieces.clone(pieces.getBoard()), 0, komi);
+
+        cloned.blackScore = this.blackScore;
+        cloned.whiteScore = this.whiteScore;
+        cloned.isBlackTurn = this.isBlackTurn;
+        cloned.blackTime = this.blackTime;
+        cloned.whiteTime = this.whiteTime;
+        cloned.consecutivePasses = this.consecutivePasses;
+        cloned.lastCapturedCount = this.lastCapturedCount;
+        cloned.lastCapturedPosition = this.lastCapturedPosition != null ? this.lastCapturedPosition.clone() : null;
+        cloned.moveHistory = new ArrayList<>(this.moveHistory);
+        cloned.boardStateHistory = new LinkedList<>(this.boardStateHistory);
+
+        return cloned;
+    }
+
 }
