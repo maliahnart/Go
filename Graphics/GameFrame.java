@@ -4,6 +4,9 @@ import Model.Settings;
 
 import javax.swing.*;
 import java.awt.*;
+import Graphics.SettingPanel;  // Thêm dòng import này nếu SettingPanel nằm trong package Graphics
+
+
 
 public class GameFrame extends JFrame {
     private static GameFrame _instance;
@@ -68,23 +71,18 @@ public class GameFrame extends JFrame {
         timer.start();
     }
 
-
     public void showMainMenu() {
         _cardLayout.show(_cardPanel, "mp");
         _mp.requestFocusInWindow();
     }
 
-//    public void playGame() {
-//        _cardLayout.show(_cardPanel, "gp");
-//        _gp.requestFocusInWindow();
-//    }
-    public void playGame() {
-        _cardLayout.show(_cardPanel, "gp");
-        _gp.startGame(); // Bắt đầu game loop
-        _gp.requestFocusInWindow();
-    }
-
     public void showGameSettings() {
         _cardLayout.show(_cardPanel, "gsp");
+    }
+
+    public void startGame(SettingPanel.GameSettings settings) {
+        _cardLayout.show(_cardPanel, "gp");
+        _gp.startGame(settings); // Truyền GameSettings tới GamePanel
+        _gp.requestFocusInWindow();
     }
 }

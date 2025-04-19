@@ -1,6 +1,5 @@
 package Graphics;
 
-import Model.Default;
 import Model.Settings;
 
 import java.awt.*;
@@ -21,8 +20,8 @@ public class Board {
     private final int offsetX;
     private final int offsetY;
 
-    public Board() {
-        this.size = Default.Config.BOARD_SIZE;
+    public Board(int size) {
+        this.size = size;
         this.cellSize = calculateCellSize();
         this.boardSize = (size - 1) * cellSize;
         this.offsetX = (Settings.Config.GAME_WIDTH - boardSize) / 2;

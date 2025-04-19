@@ -41,8 +41,16 @@ public class MinimaxAI {
     }
 
     private int minimax(GameLogic game, int depth, boolean maximizing, int alpha, int beta) {
+        // Kiểm tra trong bảng transposition
+        String boardState = game.getBoardState();
+        if (transpositionTable.containsKey(boardState)) {
+            return transpositionTable.get(boardState);
+        }
+
         if (depth == 0 || game.isGameEnded()) {
-            return evaluateBoard(game);
+            int score = evaluateBoard(game);
+            transpositionTable.put(boardState, score); // Lưu kết quả vào bảng transposition
+            return score;
         }
 
         int bestScore = maximizing ? Integer.MIN_VALUE : Integer.MAX_VALUE;
@@ -66,8 +74,25 @@ public class MinimaxAI {
             }
         }
 
+        transpositionTable.put(boardState, bestScore); // Lưu lại điểm số tối ưu cho trạng thái hiện tại
         return bestScore;
     }
+
+    private int evaluateBoard(GameLogic game) {
+        double blackScore = game.getBlackScore();
+        double whiteScore = game.getWhiteScore() + 6.5; // komi
+
+        // Đánh giá thêm các yếu tố như khả năng sống của quân, lãnh thổ
+        int territoryScore = countTerritory(game);
+        return aiPlaysBlack ? (int) (blackScore - whiteScore + territoryScore) : (int) (whiteScore - blackScore + territoryScore);
+    }
+
+    private int countTerritory(GameLogic game) {
+        int territory = 0;
+        // Tính toán lãnh thổ
+        return territory;
+    }
+
 
     private int evaluateBoard(GameLogic game) {
         double black = game.getBlackScore();

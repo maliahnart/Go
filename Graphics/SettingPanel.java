@@ -1,7 +1,5 @@
 package Graphics;
 
-import Model.Default;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -11,6 +9,28 @@ public class SettingPanel extends JPanel {
     private JButton btnPlayerVsPlayer, btnPlayerVsAI, btnBack;
     private JPanel mainPanel, pvpPanel, aiPanel;
     private CardLayout cardLayout;
+
+    // Lớp nội bộ để lưu trữ các cài đặt
+    public static class GameSettings {
+        public final String gameMode; // "PVP" hoặc "AI"
+        public final int boardSize;
+        public final int timePerTurn;
+        public final double komi;
+        public final String scoring;
+        public final String aiDifficulty; // null cho PVP
+        public final String playerSide; // null cho PVP
+
+        public GameSettings(String gameMode, int boardSize, int timePerTurn, double komi, String scoring,
+                            String aiDifficulty, String playerSide) {
+            this.gameMode = gameMode;
+            this.boardSize = boardSize;
+            this.timePerTurn = timePerTurn;
+            this.komi = komi;
+            this.scoring = scoring;
+            this.aiDifficulty = aiDifficulty;
+            this.playerSide = playerSide;
+        }
+    }
 
     public SettingPanel() {
         setLayout(new BorderLayout());
@@ -127,7 +147,7 @@ public class SettingPanel extends JPanel {
         gbc.gridy = 2;
         panel.add(lblBoardSize, gbc);
 
-        JComboBox<String> cbBoardSize = new JComboBox<>(new String[]{"4x4","9x9", "13x13", "19x19"});
+        JComboBox<String> cbBoardSize = new JComboBox<>(new String[]{"4x4", "9x9", "13x13", "19x19"});
         cbBoardSize.setFont(labelFont);
         gbc.gridx = 1;
         panel.add(cbBoardSize, gbc);
@@ -170,8 +190,12 @@ public class SettingPanel extends JPanel {
             }
             String scoring = cbScoring.getSelectedItem().toString();
 
-            Default.updateSettings(boardSize, timePerTurn, komi, scoring);
+            // Tạo đối tượng GameSettings cho PVP
+            GameSettings settings = new GameSettings("PVP", boardSize, timePerTurn, komi, scoring, null, null);
             cardLayout.show(mainPanel, "main");
+
+            // Chuyển sang GamePanel với cài đặt
+            GameFrame.getInstance().startGame(settings);
         });
         panel.add(btnConfirm, gbc);
 
@@ -288,9 +312,12 @@ public class SettingPanel extends JPanel {
             }
             String scoring = cbScoring.getSelectedItem().toString();
 
-            Default.updateSettings(boardSize, timePerTurn, komi, scoring);
-            Default.updateAISettings(difficulty, playerSide);
+            // Tạo đối tượng GameSettings cho AI
+            GameSettings settings = new GameSettings("AI", boardSize, timePerTurn, komi, scoring, difficulty, playerSide);
             cardLayout.show(mainPanel, "main");
+
+            // Chuyển sang GamePanel với cài đặt
+            GameFrame.getInstance().startGame(settings);
         });
         panel.add(btnConfirm, gbc);
 

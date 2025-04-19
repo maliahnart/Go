@@ -11,16 +11,13 @@ import javax.imageio.ImageIO;
 
 public class MenuPanel extends JPanel {
     private BufferedImage backgroundImage;
-    private BufferedImage btnPlay, btnPlayHover;
-    private BufferedImage btnSettings, btnSettingsHover;
-    private BufferedImage btnExit, btnExitHover;
-    private BufferedImage btnMusic, btnMusicHover;
+    private BufferedImage btnPlay;
+    private BufferedImage btnSettings;
+    private BufferedImage btnExit;
 
     private boolean isPlayHover = false;
     private boolean isSettingsHover = false;
     private boolean isExitHover = false;
-    private boolean isMusicHover = false;
-    private boolean isMusicPlaying = true;  // Trạng thái nhạc
 
     private static final int BUTTON_WIDTH = 100;
     private static final int BUTTON_HEIGHT = 50;
@@ -33,24 +30,54 @@ public class MenuPanel extends JPanel {
         addMouseMotionListener(new MouseHandler());
 
         // Khởi tạo và phát nhạc nền
-        menuMusic = new Sound("Resources/BackgroundMusic.wav");
-//        menuMusic.playSound();
+        try {
+            menuMusic = new Sound("Resources/BackgroundMusic.wav");
+            menuMusic.playSound();
+        } catch (Exception e) {
+            System.err.println("Không thể tải nhạc nền: " + e.getMessage());
+        }
     }
 
     private void loadResources() {
         try {
             backgroundImage = ImageIO.read(getClass().getResource("/Resources/gowall.png"));
-            btnPlay = ImageIO.read(getClass().getResource("/Resources/play.png"));
-            btnPlayHover = ImageIO.read(getClass().getResource("/Resources/gowall.png"));
-            btnSettings = ImageIO.read(getClass().getResource("/Resources/setting.png"));
-            btnSettingsHover = ImageIO.read(getClass().getResource("/Resources/gowall.png"));
-            btnExit = ImageIO.read(getClass().getResource("/Resources/quit.png"));
-            btnExitHover = ImageIO.read(getClass().getResource("/Resources/gowall.png"));
-            btnMusic = ImageIO.read(getClass().getResource("/Resources/quit.png"));
-            btnMusicHover = ImageIO.read(getClass().getResource("/Resources/quit.png"));
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Không thể tải ảnh nền: " + e.getMessage());
+            setBackground(Color.LIGHT_GRAY); // Màu dự phòng
         }
+
+        try {
+            btnPlay = ImageIO.read(getClass().getResource("/Resources/play.png"));
+        } catch (IOException e) {
+            System.err.println("Không thể tải ảnh btnPlay: " + e.getMessage());
+            btnPlay = createFallbackImage(BUTTON_WIDTH, BUTTON_HEIGHT, Color.GREEN);
+        }
+
+        try {
+            btnSettings = ImageIO.read(getClass().getResource("/Resources/setting.png"));
+        } catch (IOException e) {
+            System.err.println("Không thể tải ảnh btnSettings: " + e.getMessage());
+            btnSettings = createFallbackImage(BUTTON_WIDTH, BUTTON_HEIGHT, Color.BLUE);
+        }
+
+        try {
+            btnExit = ImageIO.read(getClass().getResource("/Resources/quit.png"));
+        } catch (IOException e) {
+            System.err.println("Không thể tải ảnh btnExit: " + e.getMessage());
+            btnExit = createFallbackImage(BUTTON_WIDTH, BUTTON_HEIGHT, Color.RED);
+        }
+    }
+
+    // Tạo ảnh dự phòng nếu không tải được
+    private BufferedImage createFallbackImage(int width, int height, Color color) {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = image.createGraphics();
+        g.setColor(color);
+        g.fillRect(0, 0, width, height);
+        g.setColor(Color.BLACK);
+        g.drawRect(0, 0, width - 1, height - 1); // Vẽ viền
+        g.dispose();
+        return image;
     }
 
     @Override
@@ -65,12 +92,24 @@ public class MenuPanel extends JPanel {
         int centerX = getWidth() / 2;
         int startY = 200;
 
-        g2d.drawImage(isPlayHover ? btnPlayHover : btnPlay, centerX - BUTTON_WIDTH / 2, startY, BUTTON_WIDTH, BUTTON_HEIGHT, null);
-        g2d.drawImage(isSettingsHover ? btnSettingsHover : btnSettings, centerX - BUTTON_WIDTH / 2, startY + 80, BUTTON_WIDTH, BUTTON_HEIGHT, null);
-        g2d.drawImage(isExitHover ? btnExitHover : btnExit, centerX - BUTTON_WIDTH / 2, startY + 160, BUTTON_WIDTH, BUTTON_HEIGHT, null);
+        // Vẽ nút với hiệu ứng hover đơn giản (đổi màu nếu hover)
+        if (isPlayHover) {
+            g2d.setColor(new Color(0, 0, 0, 100)); // Lớp phủ mờ
+            g2d.fillRect(centerX - BUTTON_WIDTH / 2, startY, BUTTON_WIDTH, BUTTON_HEIGHT);
+        }
+        g2d.drawImage(btnPlay, centerX - BUTTON_WIDTH / 2, startY, BUTTON_WIDTH, BUTTON_HEIGHT, null);
 
-        // Vẽ nút bật/tắt nhạc
-        g2d.drawImage(isMusicPlaying ? btnMusic : btnMusicHover, 20, getHeight() - 60, 50, 50, null);
+        if (isSettingsHover) {
+            g2d.setColor(new Color(0, 0, 0, 100));
+            g2d.fillRect(centerX - BUTTON_WIDTH / 2, startY + 80, BUTTON_WIDTH, BUTTON_HEIGHT);
+        }
+        g2d.drawImage(btnSettings, centerX - BUTTON_WIDTH / 2, startY + 80, BUTTON_WIDTH, BUTTON_HEIGHT, null);
+
+        if (isExitHover) {
+            g2d.setColor(new Color(0, 0, 0, 100));
+            g2d.fillRect(centerX - BUTTON_WIDTH / 2, startY + 160, BUTTON_WIDTH, BUTTON_HEIGHT);
+        }
+        g2d.drawImage(btnExit, centerX - BUTTON_WIDTH / 2, startY + 160, BUTTON_WIDTH, BUTTON_HEIGHT, null);
     }
 
     private class MouseHandler extends MouseAdapter {
@@ -81,10 +120,9 @@ public class MenuPanel extends JPanel {
             int centerX = getWidth() / 2;
             int startY = 200;
 
-            isPlayHover = isMouseOver(x, y, centerX, startY);
-            isSettingsHover = isMouseOver(x, y, centerX, startY + 80);
-            isExitHover = isMouseOver(x, y, centerX, startY + 160);
-            isMusicHover = isMouseOver(x, y, 20, getHeight() - 60, 50, 50);
+            isPlayHover = isMouseOver(x, y, centerX - BUTTON_WIDTH / 2, startY);
+            isSettingsHover = isMouseOver(x, y, centerX - BUTTON_WIDTH / 2, startY + 80);
+            isExitHover = isMouseOver(x, y, centerX - BUTTON_WIDTH / 2, startY + 160);
 
             repaint();
         }
@@ -96,35 +134,25 @@ public class MenuPanel extends JPanel {
             int centerX = getWidth() / 2;
             int startY = 200;
 
-            if (isMouseOver(x, y, centerX, startY)) {
-                menuMusic.stopSound();
-                GameFrame.getInstance().playGame();
-            } else if (isMouseOver(x, y, centerX, startY + 80)) {
-                GameFrame.getInstance().showGameSettings();
-            } else if (isMouseOver(x, y, centerX, startY + 160)) {
-                menuMusic.stopSound();
+            if (isMouseOver(x, y, centerX - BUTTON_WIDTH / 2, startY)) {
+                // Cấu hình mặc định cho trò chơi
+                SettingPanel.GameSettings defaultSettings = new SettingPanel.GameSettings(
+                        "PVP", 19, 30, 6.5, "Trung Quốc", null, null
+                );
+                GameFrame.getInstance().startGame(defaultSettings);
+            } else if (isMouseOver(x, y, centerX - BUTTON_WIDTH / 2, startY + 80)) {
+                GameFrame.getInstance().showGameSettings(); // Chuyển sang SettingPanel
+            } else if (isMouseOver(x, y, centerX - BUTTON_WIDTH / 2, startY + 160)) {
+                if (menuMusic != null) {
+                    menuMusic.stopSound();
+                }
                 System.exit(0);
-            } else if (isMouseOver(x, y, 20, getHeight() - 60, 50, 50)) {
-                toggleMusic();
             }
         }
+
     }
 
     private boolean isMouseOver(int x, int y, int btnX, int btnY) {
         return x >= btnX && x <= btnX + BUTTON_WIDTH && y >= btnY && y <= btnY + BUTTON_HEIGHT;
-    }
-
-    private boolean isMouseOver(int x, int y, int btnX, int btnY, int width, int height) {
-        return x >= btnX && x <= btnX + width && y >= btnY && y <= btnY + height;
-    }
-
-    private void toggleMusic() {
-        if (isMusicPlaying) {
-            menuMusic.stopSound();
-        } else {
-            menuMusic.playSound();
-        }
-        isMusicPlaying = !isMusicPlaying;
-        repaint();
     }
 }
