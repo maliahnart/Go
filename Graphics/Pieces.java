@@ -51,14 +51,19 @@ public class Pieces {
     }
 
     public void addPiece(int x, int y, Color color) {
-        if (isValidPosition(x, y) && isEmpty(x, y)) {
-            pieceList.add(new Piece(x, y, color));
+        synchronized (pieceList) {
+            if (isValidPosition(x, y) && isEmpty(x, y)) {
+                pieceList.add(new Piece(x, y, color));
+            }
         }
     }
 
     public void removePiece(int x, int y) {
-        pieceList.removeIf(piece -> piece.getX() == x && piece.getY() == y);
+        synchronized (pieceList) {
+            pieceList.removeIf(piece -> piece.getX() == x && piece.getY() == y);
+        }
     }
+
 
     private boolean isValidPosition(int x, int y) {
         return x >= 0 && x < board.getSize() && y >= 0 && y < board.getSize();
@@ -77,27 +82,30 @@ public class Pieces {
         int offsetY = board.getOffsetY();
         int pieceSize = (int) (cellSize * PIECE_SCALE);
 
-        for (Piece piece : pieceList) {
-            int pixelX = offsetX + piece.getX() * cellSize - pieceSize / 2;
-            int pixelY = offsetY + piece.getY() * cellSize - pieceSize / 2;
-            Image pieceImage = piece.getColor().equals(Color.BLACK) ? blackPieceImage : whitePieceImage;
+        synchronized (pieceList) {
+            for (Piece piece : pieceList) {
+                int pixelX = offsetX + piece.getX() * cellSize - pieceSize / 2;
+                int pixelY = offsetY + piece.getY() * cellSize - pieceSize / 2;
+                Image pieceImage = piece.getColor().equals(Color.BLACK) ? blackPieceImage : whitePieceImage;
 
-            g2d.setColor(SHADOW_COLOR);
-            g2d.fillOval(pixelX + SHADOW_OFFSET, pixelY + SHADOW_OFFSET, pieceSize, pieceSize);
+                g2d.setColor(SHADOW_COLOR);
+                g2d.fillOval(pixelX + SHADOW_OFFSET, pixelY + SHADOW_OFFSET, pieceSize, pieceSize);
 
-            if (pieceImage != null) {
-                g2d.drawImage(pieceImage, pixelX, pixelY, pieceSize, pieceSize, null);
-            } else {
-                g2d.setColor(piece.getColor());
-                g2d.fillOval(pixelX, pixelY, pieceSize, pieceSize);
-                if (piece.getColor().equals(Color.WHITE)) {
-                    g2d.setColor(Color.BLACK);
-                    g2d.setStroke(new BasicStroke(1.0f));
-                    g2d.drawOval(pixelX, pixelY, pieceSize, pieceSize);
+                if (pieceImage != null) {
+                    g2d.drawImage(pieceImage, pixelX, pixelY, pieceSize, pieceSize, null);
+                } else {
+                    g2d.setColor(piece.getColor());
+                    g2d.fillOval(pixelX, pixelY, pieceSize, pieceSize);
+                    if (piece.getColor().equals(Color.WHITE)) {
+                        g2d.setColor(Color.BLACK);
+                        g2d.setStroke(new BasicStroke(1.0f));
+                        g2d.drawOval(pixelX, pixelY, pieceSize, pieceSize);
+                    }
                 }
             }
         }
     }
+
 
     public ArrayList<Piece> getPieceList() {
         return new ArrayList<>(pieceList);

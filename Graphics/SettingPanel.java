@@ -74,7 +74,14 @@ public class SettingPanel extends JPanel {
 
         btnPlayerVsPlayer = createStyledButton("Chơi với Người");
         gbc.gridy = 1;
-        btnPlayerVsPlayer.addActionListener(e -> cardLayout.show(mainPanel, "pvp"));
+//        btnPlayerVsPlayer.addActionListener(e -> cardLayout.show(mainPanel, "pvp"));
+        btnPlayerVsPlayer.addActionListener(e -> {
+            // ✅ Reset AI về chế độ mặc định (tắt AI)
+            Default.Config.AI_DIFFICULTY = "Tắt";
+            Default.Config.PLAYER_SIDE = "Đen";
+            cardLayout.show(mainPanel, "pvp");
+        });
+
         panel.add(btnPlayerVsPlayer, gbc);
 
         btnPlayerVsAI = createStyledButton("Chơi với Máy");

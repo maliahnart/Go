@@ -43,11 +43,15 @@ public class GameFrame extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setResizable(false);
 
-        this.setPreferredSize(new Dimension(Settings.Config.GAME_WIDTH, Settings.Config.GAME_HEIGHT));
+        // Đặt kích thước cố định thay vì sử dụng pack()
+        this.setSize(new Dimension(Settings.Config.GAME_WIDTH, Settings.Config.GAME_HEIGHT));
         this.setLayout(new BorderLayout());
 
-        this.pack();
+        // Không gọi pack() để tránh tự động điều chỉnh kích thước
         this.setLocationRelativeTo(null);
+
+        // Gỡ lỗi: In kích thước thực tế của frame
+        System.out.println("GameFrame size set to: " + Settings.Config.GAME_WIDTH + "x" + Settings.Config.GAME_HEIGHT);
     }
 
     public static GameFrame getInstance() {
@@ -62,25 +66,21 @@ public class GameFrame extends JFrame {
     public void showSplashScreen() {
         Timer timer = new Timer(3000, e -> {
             showMainMenu();
-            ((Timer) e.getSource()).stop(); // Dừng Timer sau khi chạy
+            ((Timer) e.getSource()).stop();
         });
         timer.setRepeats(false);
         timer.start();
     }
-
 
     public void showMainMenu() {
         _cardLayout.show(_cardPanel, "mp");
         _mp.requestFocusInWindow();
     }
 
-//    public void playGame() {
-//        _cardLayout.show(_cardPanel, "gp");
-//        _gp.requestFocusInWindow();
-//    }
     public void playGame() {
+        System.out.println("GamePanel displayed");
         _cardLayout.show(_cardPanel, "gp");
-        _gp.startGame(); // Bắt đầu game loop
+        _gp.startGame();
         _gp.requestFocusInWindow();
     }
 

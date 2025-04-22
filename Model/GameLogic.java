@@ -3,10 +3,7 @@ package Model;
 import Graphics.Pieces;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.LinkedList;
+import java.util.*;
 
 public class GameLogic {
     private final Pieces pieces;
@@ -14,13 +11,13 @@ public class GameLogic {
     private int whiteScore;
     private boolean isBlackTurn;
     private ArrayList<int[]> moveHistory;
-    private int[] lastCapturedPosition; // Lưu vị trí quân bị ăn cuối cùng
-    private int lastCapturedCount;      // Số quân bị ăn ở lượt cuối
+    private int[] lastCapturedPosition;
+    private int lastCapturedCount;
     private int blackTime;
     private int whiteTime;
     private int consecutivePasses;
     private double komi;
-    private LinkedList<String> boardStateHistory; // Lưu trạng thái bàn cờ sau mỗi nước đi
+    private LinkedList<String> boardStateHistory;
 
     public GameLogic(Pieces pieces, int initialTime, double komi) {
         this.pieces = pieces;
@@ -35,58 +32,48 @@ public class GameLogic {
         this.consecutivePasses = 0;
         this.komi = komi;
         this.boardStateHistory = new LinkedList<>();
-        // Lưu trạng thái ban đầu của bàn cờ
         this.boardStateHistory.add(getBoardState());
     }
 
     public boolean placePiece(int x, int y) {
         if (!isValidPosition(x, y) || !pieces.isEmpty(x, y)) return false;
 
-        // Lưu vị trí bị ăn trước đó để kiểm tra Ko
         int[] koPosition = lastCapturedPosition != null ? lastCapturedPosition.clone() : null;
         int capturedCount = lastCapturedCount;
 
-        // Kiểm tra luật Ko đơn giản (không được đánh vào vị trí vừa bị ăn)
-        // Chỉ áp dụng khi có đúng 1 quân bị ăn ở lượt trước
         if (capturedCount == 1 && koPosition != null && x == koPosition[0] && y == koPosition[1]) {
-            return false; // Từ chối nước đi vi phạm luật Ko
+            return false;
         }
 
         Color color = isBlackTurn ? Color.BLACK : Color.WHITE;
         pieces.addPiece(x, y, color);
 
-        // Kiểm tra và bắt quân đối phương nếu có thể
         int captured = captureOpponentPieces(x, y, color);
         if (captured > 0) {
             if (isBlackTurn) blackScore += captured;
             else whiteScore += captured;
         }
 
-        // Kiểm tra tự do của nhóm vừa đặt
         if (!hasLiberties(x, y, color)) {
             pieces.removePiece(x, y);
             return false;
         }
 
-        // Lấy trạng thái bàn cờ sau khi đặt quân và bắt quân
         String newBoardState = getBoardState();
 
-        // Kiểm tra luật Ko mở rộng (không được tạo lại trạng thái bàn cờ đã tồn tại)
         if (boardStateHistory.contains(newBoardState)) {
             pieces.removePiece(x, y);
             return false;
         }
 
-        // Cập nhật lịch sử
         moveHistory.add(new int[]{x, y});
         boardStateHistory.add(newBoardState);
-        // Giới hạn kích thước lịch sử nếu cần thiết để tránh tràn bộ nhớ
         if (boardStateHistory.size() > 8) {
             boardStateHistory.removeFirst();
         }
 
         lastCapturedCount = captured;
-        if (captured == 0) lastCapturedPosition = null; // Reset Ko nếu không ăn quân
+        if (captured == 0) lastCapturedPosition = null;
 
         consecutivePasses = 0;
         isBlackTurn = !isBlackTurn;
@@ -99,24 +86,24 @@ public class GameLogic {
         lastCapturedCount = 0;
         isBlackTurn = !isBlackTurn;
 
-        // Thêm trạng thái bàn cờ sau khi pass
         boardStateHistory.add(getBoardState());
         if (boardStateHistory.size() > 8) {
             boardStateHistory.removeFirst();
         }
-
-        if (consecutivePasses >= 2) calculateFinalScore();
     }
 
     public void updateTime() {
-        if (isBlackTurn) blackTime--;
-        else whiteTime--;
+        if (isBlackTurn()) {
+            blackTime -= 1;
+        } else {
+            whiteTime -= 1;
+        }
     }
 
     private int captureOpponentPieces(int x, int y, Color color) {
         Color opponentColor = color.equals(Color.BLACK) ? Color.WHITE : Color.BLACK;
         int capturedCount = 0;
-        lastCapturedPosition = null; // Reset vị trí bị ăn
+        lastCapturedPosition = null;
 
         int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
 
@@ -129,9 +116,8 @@ public class GameLogic {
                     int groupSize = removeGroup(adjX, adjY, opponentColor);
                     capturedCount += groupSize;
 
-                    // Chỉ lưu vị trí Ko khi đúng 1 quân bị ăn
                     if (groupSize == 1) {
-                        lastCapturedPosition = new int[]{adjX, adjY}; // Lưu vị trí bị ăn
+                        lastCapturedPosition = new int[]{adjX, adjY};
                     }
                 }
             }
@@ -181,7 +167,7 @@ public class GameLogic {
         }
     }
 
-    private String getBoardState() {
+    public String getBoardState() {
         StringBuilder state = new StringBuilder();
         int boardSize = pieces.getBoardSize();
         for (int y = 0; y < boardSize; y++) {
@@ -193,12 +179,26 @@ public class GameLogic {
         return state.toString();
     }
 
-    private void calculateFinalScore() {
+    public String getWinnerMessage() {
+        if (!isGameEnded()) return null;
+
         int blackTerritory = countTerritory(Color.BLACK);
         int whiteTerritory = countTerritory(Color.WHITE);
         double finalBlackScore = blackTerritory + blackScore;
         double finalWhiteScore = whiteTerritory + whiteScore + komi;
-        System.out.println("Black: " + finalBlackScore + " - White: " + finalWhiteScore);
+
+        StringBuilder message = new StringBuilder();
+        message.append("Game Over!\n");
+        message.append("Black Score: ").append(finalBlackScore).append("\n");
+        message.append("White Score: ").append(finalWhiteScore).append("\n");
+        if (finalBlackScore > finalWhiteScore) {
+            message.append("Black wins!");
+        } else if (finalWhiteScore > finalBlackScore) {
+            message.append("White wins!");
+        } else {
+            message.append("It's a tie!");
+        }
+        return message.toString();
     }
 
     private int countTerritory(Color color) {
@@ -255,16 +255,20 @@ public class GameLogic {
         }
     }
 
-    private boolean isValidPosition(int x, int y) {
+    public boolean isValidPosition(int x, int y) {
         int boardSize = pieces.getBoardSize();
         return x >= 0 && x < boardSize && y >= 0 && y < boardSize;
     }
 
-    private Color getPieceColor(int x, int y) {
+    public Color getPieceColor(int x, int y) {
         for (Pieces.Piece piece : pieces.getPieceList()) {
             if (piece.getX() == x && piece.getY() == y) return piece.getColor();
         }
         return null;
+    }
+
+    public int getBoardSize() {
+        return pieces.getBoardSize();
     }
 
     public int getBlackScore() { return blackScore; }
@@ -274,6 +278,165 @@ public class GameLogic {
     public int getWhiteTime() { return whiteTime; }
     public boolean isGameEnded() { return consecutivePasses >= 2 || blackTime <= 0 || whiteTime <= 0; }
 
+    public List<int[]> getPossibleMoves(boolean isBlack) {
+        List<int[]> moves = new ArrayList<>();
+        int boardSize = pieces.getBoardSize();
+        for (int x = 0; x < boardSize; x++) {
+            for (int y = 0; y < boardSize; y++) {
+                GameLogic tempLogic = this.clone();
+                tempLogic.isBlackTurn = isBlack;
+                if (tempLogic.placePiece(x, y)) {
+                    moves.add(new int[]{x, y});
+                }
+            }
+        }
+        moves.add(new int[]{-1, -1});
+        return moves;
+    }
+
+    public int evaluateBoard(boolean forBlack) {
+        int blackTerritory = countTerritory(Color.BLACK);
+        int whiteTerritory = countTerritory(Color.WHITE);
+        int blackLiberties = countLiberties(Color.BLACK);
+        int whiteLiberties = countLiberties(Color.WHITE);
+        int blackInfluence = calculateInfluence(Color.BLACK);
+        int whiteInfluence = calculateInfluence(Color.WHITE);
+
+        int baseScore = (blackScore + blackTerritory) - (whiteScore + whiteTerritory);
+        int libertyScore = (blackLiberties - whiteLiberties) * 2;
+        int influenceScore = (blackInfluence - whiteInfluence) * 3;
+
+        int totalScore = baseScore + libertyScore + influenceScore;
+
+        return forBlack ? totalScore : -totalScore;
+    }
+
+    public void undoMove() {
+        if (!moveHistory.isEmpty()) {
+            int[] lastMove = moveHistory.remove(moveHistory.size() - 1);
+            boardStateHistory.removeLast();
+            pieces.removePiece(lastMove[0], lastMove[1]);
+            isBlackTurn = !isBlackTurn;
+            lastCapturedPosition = null;
+            lastCapturedCount = 0;
+        }
+    }
+
+    private int countLiberties(Color color) {
+        Set<String> visited = new HashSet<>();
+        int liberties = 0;
+        for (Pieces.Piece piece : pieces.getPieceList()) {
+            if (piece.getColor().equals(color)) {
+                int x = piece.getX();
+                int y = piece.getY();
+                String key = x + "," + y;
+                if (!visited.contains(key)) {
+                    liberties += getGroupLiberties(x, y, color, visited);
+                }
+            }
+        }
+        return liberties;
+    }
+
+    private int getGroupLiberties(int x, int y, Color color, Set<String> visited) {
+        Set<String> groupVisited = new HashSet<>();
+        Set<String> libertyPositions = new HashSet<>();
+        findGroupLiberties(x, y, color, groupVisited, libertyPositions);
+        visited.addAll(groupVisited);
+        return libertyPositions.size();
+    }
+
+    private void findGroupLiberties(int x, int y, Color color, Set<String> visited, Set<String> liberties) {
+        String key = x + "," + y;
+        if (!isValidPosition(x, y) || visited.contains(key) || pieces.isEmpty(x, y)) return;
+        Color pieceColor = getPieceColor(x, y);
+        if (pieceColor == null || !pieceColor.equals(color)) return;
+
+        visited.add(key);
+        int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}};
+        for (int[] dir : directions) {
+            int adjX = x + dir[0];
+            int adjY = y + dir[1];
+            String adjKey = adjX + "," + adjY;
+            if (isValidPosition(adjX, adjY) && pieces.isEmpty(adjX, adjY)) {
+                liberties.add(adjKey);
+            } else if (isValidPosition(adjX, adjY) && !visited.contains(adjKey)) {
+                findGroupLiberties(adjX, adjY, color, visited, liberties);
+            }
+        }
+    }
+
+    private int calculateInfluence(Color color) {
+        int influence = 0;
+        int boardSize = pieces.getBoardSize();
+        for (int x = 0; x < boardSize; x++) {
+            for (int y = 0; y < boardSize; y++) {
+                if (pieces.isEmpty(x, y)) {
+                    double distToNearest = getDistanceToNearestPiece(x, y, color);
+                    if (distToNearest < 3) {
+                        influence += (int) (10 / (distToNearest + 1));
+                    }
+                }
+            }
+        }
+        return influence;
+    }
+
+    private double getDistanceToNearestPiece(int x, int y, Color color) {
+        double minDistance = Double.MAX_VALUE;
+        for (Pieces.Piece piece : pieces.getPieceList()) {
+            if (piece.getColor().equals(color)) {
+                double dist = Math.sqrt(Math.pow(piece.getX() - x, 2) + Math.pow(piece.getY() - y, 2));
+                minDistance = Math.min(minDistance, dist);
+            }
+        }
+        return minDistance;
+    }
+
+    public List<int[]> getStrategicMoves(boolean isBlack) {
+        List<int[]> moves = new ArrayList<>();
+        int boardSize = pieces.getBoardSize();
+        Set<String> checked = new HashSet<>();
+
+        for (Pieces.Piece piece : pieces.getPieceList()) {
+            int x = piece.getX();
+            int y = piece.getY();
+            int[][] directions = {{0, 1}, {1, 0}, {0, -1}, {-1, 0}, {1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+            for (int[] dir : directions) {
+                int newX = x + dir[0];
+                int newY = y + dir[1];
+                String key = newX + "," + newY;
+                if (isValidPosition(newX, newY) && pieces.isEmpty(newX, newY) && !checked.contains(key)) {
+                    GameLogic tempLogic = this.clone();
+                    tempLogic.isBlackTurn = isBlack;
+                    if (tempLogic.placePiece(newX, newY)) {
+                        moves.add(new int[]{newX, newY});
+                        checked.add(key);
+                    }
+                }
+            }
+        }
+
+        if (moves.isEmpty()) {
+            int center = boardSize / 2;
+            int[][] centerPositions = {
+                    {center, center}, {center - 1, center}, {center + 1, center},
+                    {center, center - 1}, {center, center + 1}
+            };
+            for (int[] pos : centerPositions) {
+                if (isValidPosition(pos[0], pos[1]) && pieces.isEmpty(pos[0], pos[1])) {
+                    GameLogic tempLogic = this.clone();
+                    tempLogic.isBlackTurn = isBlack;
+                    if (tempLogic.placePiece(pos[0], pos[1])) {
+                        moves.add(pos);
+                    }
+                }
+            }
+        }
+
+        moves.add(new int[]{-1, -1});
+        return moves;
+    }
 
     @Override
     public GameLogic clone() {
@@ -293,4 +456,11 @@ public class GameLogic {
         return cloned;
     }
 
+    public void updateTimeForAI(boolean aiColor) {
+        if (aiColor) {
+            blackTime -= 1;
+        } else {
+            whiteTime -= 1;
+        }
+    }
 }

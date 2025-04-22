@@ -6,7 +6,7 @@ public class Default {
         public static int TIME_PER_TURN = 30;
         public static double KOMI = 6.5;
         public static String SCORING = "Trung Quốc";
-        public static String AI_DIFFICULTY = "Trung bình";
+        public static String AI_DIFFICULTY = "Tắt";
         public static String PLAYER_SIDE = "Đen";
     }
 
